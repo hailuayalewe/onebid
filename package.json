@@ -1,0 +1,49 @@
+{
+  "name": "onebid-demo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "DEMO lowest-unique-bid platform (original branding, inspired by lowest-unique-bid competition sites)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.10.0",
+    "@node-rs/argon2": "^2.0.2",
+    "lucide-react": "^0.548.0",
+    "next": "^16.4.3",
+    "next-auth": "5.0.0-beta.30",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.65.0",
+    "server-only": "^0.0.1",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@prisma/client": "^6.18.0",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.38.0",
+    "eslint-config-next": "^16.4.3",
+    "prisma": "^6.18.0",
+    "tailwindcss": "^4.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#4a044e"/><stop offset="1" stop-color="#7e22ce"/>
+  </linearGradient></defs>
+  <rect width="800" height="600" fill="url(#g)"/>
+  <path d="M240 400 a160 160 0 0 1 320 0" fill="none" stroke="#f5d0fe" stroke-width="16" stroke-linecap="round"/>
+  <rect x="200" y="370" width="80" height="140" rx="24" fill="#0f172a" stroke="#e9d5ff" stroke-width="6"/>
+  <rect x="520" y="370" width="80" height="140" rx="24" fill="#0f172a" stroke="#e9d5ff" stroke-width="6"/>
+  <text x="400" y="200" fill="#f5d0fe" font-family="sans-serif" font-size="40" text-anchor="middle">Headphones</text>
+  <text x="400" y="560" fill="#c4b5fd" font-family="sans-serif" font-size="24" text-anchor="middle">Product placeholder</text>
+</svg>

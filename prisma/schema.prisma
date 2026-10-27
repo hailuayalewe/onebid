@@ -1,0 +1,196 @@
+// Prisma schema — OneBid-style DEMO lowest-unique-bid platform (original implementation).
+// Money/bid values: Prisma Decimal (never floating point). Currency ETB, precision per draw.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum DrawStatus {
+  DRAFT
+  UPCOMING
+  ACTIVE
+  PAUSED
+  CLOSED
+  SETTLED
+}
+
+enum CreditTxType {
+  AWARD // starting balance / promo
+  BID_FEE // deducted when placing a bid
+  REFUND // draw cancelled or bid fee refunded
+  ADJUSTMENT // audited admin adjustment
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  hashedPassword String?
+  role           Role      @default(USER)
+  suspended      Boolean   @default(false)
+  suspendReason  String?
+  creditBalance  Decimal? @default(0) @db.Decimal(14, 4)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  bids      Bid[]
+  creditTx  DemoCreditTransaction[]
+  auditLogs AdminAuditLog[]
+  accounts  Account[]
+  sessions  Session[]
+
+  @@index([suspended])
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Draw {
+  id           String     @id @default(cuid())
+  slug         String     @unique
+  title        String
+  prizeName    String
+  description String   @db.Text
+  currency     String     @default("ETB") // demo currency label, no real transactions
+  bidPrecision Int        @default(2)
+  minBid       Decimal    @db.Decimal(14, 4)
+  maxBid       Decimal    @db.Decimal(14, 4)
+  bidCreditFee Decimal    @default(0) @db.Decimal(14, 4) // demo credits consumed per bid
+  status       DrawStatus @default(DRAFT)
+  opensAt      DateTime
+  closesAt     DateTime
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  prizeImages PrizeImage[]
+  bids        Bid[]
+  result      DrawResult?
+
+  @@index([status, closesAt])
+  @@index([opensAt])
+  @@index([closesAt])
+  @@map("draws")
+}
+
+model PrizeImage {
+  id        String @id @default(cuid())
+  drawId    String
+  draw      Draw   @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  src       String // URL (e.g. /placeholders/x.svg or external)
+  alt       String
+  sortOrder Int    @default(0)
+
+  @@index([drawId])
+  @@map("prize_images")
+}
+
+model Bid {
+  id        String   @id @default(cuid())
+  drawId    String
+  userId    String
+  amount    Decimal  @db.Decimal(14, 4)
+  createdAt DateTime @default(now())
+
+  draw Draw @relation(fields: [drawId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([drawId, amount])
+  @@index([userId, createdAt])
+  @@map("bids")
+}
+
+model DrawResult {
+  id            String   @id @default(cuid())
+  drawId        String   @unique
+  hasWinner     Boolean
+  winningAmount Decimal? @db.Decimal(14, 4)
+  winUserId     String?
+  settledAt     DateTime @default(now())
+  settledBy     String // "system" or admin email/id
+  draw          Draw     @relation(fields: [drawId], references: [id], onDelete: Cascade)
+
+  // Idempotency: settlement only inserts if none exists (upsert guarded / create after check in transaction)
+  @@map("draw_results")
+}
+
+model DemoCreditTransaction {
+  id           String       @id @default(cuid())
+  userId       String
+  type         CreditTxType
+  amount       Decimal      @db.Decimal(14, 4) // positive = credit to balance; negative = deduction
+  balanceAfter Decimal      @db.Decimal(14, 4)
+  drawId       String?
+  bidId        String?
+  note         String?
+  createdAt    DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId])
+  @@map("demo_credit_transactions")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String? // admin user id ("system" for seeded/system actions)
+  actorEmail String
+  action     String // e.g. "user.suspend", "credit.adjust", "draw.close", "result.settle"
+  targetType String
+  targetId   String
+  details    String? @db.Text // JSON string
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+
+  @@index([createdAt])
+  @@index([action])
+  @@map("admin_audit_logs")
+}
